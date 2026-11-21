@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#123d3b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CAROÁ">
+<title>CAROÁ Celular</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icones/logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icones/apple-touch-icon.png">
+<link rel="stylesheet" href="vendor/ol.css">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<!-- ============ INÍCIO: áreas guardadas no celular ============ -->
+<section id="tela-inicio" class="tela">
+  <header class="topo">
+    <img src="icones/logo.svg" alt="" class="logo">
+    <div class="marca">CAROÁ <b>VETORIZA</b><small>LOTES NO CELULAR</small></div>
+  </header>
+  <main class="conteudo">
+    <div id="dica-instalar" class="cartao dica" hidden>
+      <b>Instale na tela de início</b> para funcionar sem internet: no Safari, toque em <span class="ico-compartilhar">⎙</span> <b>Compartilhar</b> → <b>Adicionar à Tela de Início</b>. Depois abra sempre pelo ícone.
+    </div>
+    <div class="acoes-grandes">
+      <button id="btn-escanear" class="botao primario grande">📷 Escanear QR code</button>
+      <button id="btn-arquivo" class="botao secundario">📂 Abrir arquivo .caroa</button>
+      <input type="file" id="arquivo-pacote" hidden>
+    </div>
+    <h2 class="titulo-lista">Áreas no celular</h2>
+    <div id="lista-areas"></div>
+    <p id="sem-areas" class="vazio" hidden>Nenhuma área ainda. No computador, aba <b>Lotes</b> → <b>📱 Área para o celular</b>, contorne as quadras e leia o QR code aqui.</p>
+    <div class="cartao nome">
+      <label for="vetorizador">Seu nome (vai junto nas linhas que você fizer)</label>
+      <input id="vetorizador" maxlength="60" placeholder="Ex.: Ricardo" autocomplete="name">
+    </div>
+    <p id="espaco" class="rodape"></p>
+  </main>
+</section>
+
+<!-- ============ LEITOR DE QR ============ -->
+<section id="tela-scanner" class="tela escura" hidden>
+  <video id="video" playsinline muted autoplay></video>
+  <div class="mira"><i></i></div>
+  <p id="scanner-texto" class="scanner-texto">Aponte para o QR code da tela do computador</p>
+  <div class="scanner-botoes">
+    <button id="btn-foto-qr" class="botao secundario">📸 Tirar foto do QR</button>
+    <button id="btn-codigo" class="botao secundario">⌨ Colar código</button>
+    <button id="btn-cancelar-scan" class="botao">Cancelar</button>
+  </div>
+  <input type="file" id="foto-qr" accept="image/*" capture="environment" hidden>
+</section>
+
+<!-- ============ BAIXANDO / ENVIANDO ============ -->
+<section id="tela-progresso" class="tela" hidden>
+  <div class="progresso-caixa">
+    <img src="icones/logo.svg" alt="" class="logo-grande">
+    <h2 id="prog-titulo">Baixando a área…</h2>
+    <div class="trilho"><i id="prog-barra"></i></div>
+    <p id="prog-texto"></p>
+    <button id="btn-prog-cancelar" class="botao">Cancelar</button>
+  </div>
+</section>
+
+<!-- ============ MAPA ============ -->
+<section id="tela-mapa" class="tela" hidden>
+  <div id="mapa"></div>
+  <canvas id="lupa" hidden></canvas>
+  <div class="barra-topo">
+    <button id="btn-voltar" class="redondo" aria-label="Voltar">‹</button>
+    <div class="titulo-area"><b id="nome-area"></b><small id="contador"></small></div>
+    <button id="btn-enviar" class="redondo enviar" aria-label="Enviar">⇪</button>
+  </div>
+  <div class="laterais">
+    <button id="btn-gps" class="redondo" aria-label="GPS">◎</button>
+    <button id="btn-olho" class="redondo" aria-label="Ver só a foto">👁</button>
+    <button id="btn-aparencia" class="redondo" aria-label="Grossura e cor das linhas">🎨</button>
+    <button id="btn-centro" class="redondo" aria-label="Ver a área toda">⤢</button>
+  </div>
+  <div id="painel-aparencia" class="painel-aparencia" hidden>
+    <div class="pa-topo"><b>Linhas: grossura e cor</b><button id="pa-fechar" class="pa-pronto">✓ Pronto</button></div>
+    <div id="pa-amostra" class="pa-amostra"></div>
+    <div class="pa-bloco">
+      <span class="pa-rotulo">Grossura <output id="pa-largura-v"></output></span>
+      <div class="pa-presets">
+        <button data-largura="0.6">Bem fina</button><button data-largura="1.4">Fina</button><button data-largura="2.6">Normal</button><button data-largura="5">Grossa</button><button data-largura="9">Bem grossa</button>
+      </div>
+      <div class="pa-ajuste"><button data-mais="largura" data-passo="-0.2" aria-label="Mais fina">−</button><input type="range" id="pa-largura" min="0.3" max="14" step="0.1"><button data-mais="largura" data-passo="0.2" aria-label="Mais grossa">+</button></div>
+    </div>
+    <div class="pa-bloco">
+      <span class="pa-rotulo">Borda preta em volta</span>
+      <div class="pa-seg" id="pa-borda"><button data-borda="sem">Sem borda</button><button data-borda="fina">Fina</button><button data-borda="grossa">Grossa</button></div>
+    </div>
+    <div class="pa-bloco">
+      <span class="pa-rotulo">Opacidade <output id="pa-opacidade-v"></output></span>
+      <div class="pa-ajuste"><button data-mais="opacidade" data-passo="-0.05" aria-label="Mais transparente">−</button><input type="range" id="pa-opacidade" min="0.15" max="1" step="0.05"><button data-mais="opacidade" data-passo="0.05" aria-label="Mais forte">+</button></div>
+    </div>
+    <div class="pa-bloco">
+      <span class="pa-rotulo">Bolinhas dos pontos <output id="pa-ponto-v"></output></span>
+      <div class="pa-ajuste"><button data-mais="ponto" data-passo="-1" aria-label="Bolinhas menores">−</button><input type="range" id="pa-ponto" min="3" max="16" step="1"><button data-mais="ponto" data-passo="1" aria-label="Bolinhas maiores">+</button></div>
+    </div>
+    <div class="pa-bloco">
+      <span class="pa-rotulo">Cores</span>
+      <div class="pa-cores">
+        <label><input type="color" id="pa-cor-equipe"><span>Equipe</span></label>
+        <label><input type="color" id="pa-cor-app"><span>App</span></label>
+        <label><input type="color" id="pa-cor-mexida"><span>Mexidas</span></label>
+      </div>
+      <label class="pa-check"><input type="checkbox" id="pa-tracejada"> Linhas da equipe tracejadas</label>
+    </div>
+    <button id="pa-padrao" class="pa-padrao">Voltar ao padrão</button>
+  </div>
+  <div id="dica-mapa" class="dica-mapa" hidden></div>
+  <div id="barra-contexto" class="barra-contexto" hidden></div>
+  <nav class="ferramentas">
+    <button data-f="mover" class="ativo"><span>✋</span>Selecionar</button>
+    <button data-f="linha"><span>✏️</span>Linha</button>
+    <button id="btn-desfazer"><span>↶</span>Desfazer</button>
+    <button id="btn-refazer"><span>↷</span>Refazer</button>
+  </nav>
+</section>
+
+<!-- ============ FOLHA DE OPÇÕES ============ -->
+<div id="folha" class="folha" hidden>
+  <div class="folha-caixa">
+    <h3 id="folha-titulo"></h3>
+    <p id="folha-texto"></p>
+    <div id="folha-botoes"></div>
+  </div>
+</div>
+
+<div id="aviso" class="aviso" hidden></div>
+
+<script src="vendor/ol.js"></script>
+<script src="vendor/jsQR.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
